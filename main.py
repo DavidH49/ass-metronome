@@ -5,13 +5,17 @@ import time
 from buttplug import Client, Device, WebsocketConnector, ProtocolSpec
 
 
-BPM = 130
+BPM = 153
 T_VIB = 0.1
+DELAY = 60 / BPM - T_VIB
+
+WS_IP = "127.0.0.1"
+WS_PORT = "12345"
 
 
 async def main():
     client = Client("Ass Metronome", ProtocolSpec.v3)
-    connector = WebsocketConnector("ws://127.0.0.1:12345", logger=client.logger)
+    connector = WebsocketConnector(f"ws://{WS_IP}:{WS_PORT}", logger=client.logger)
 
     try:
         await client.connect(connector)
@@ -23,18 +27,18 @@ async def main():
     if len(client.devices) != 0:
         device: Device = client.devices[0]
 
-        DELAY = 60 / BPM - T_VIB
-        delta = 0
+        if len(device.actuators) > 0:
 
-        while True:
-            t_start = time.process_time()
+            while True:
+                t_start = time.process_time()
 
-            await device.actuators[0].command(1)
-            await asyncio.sleep(T_VIB)
-            await device.actuators[0].command(0)
-            await asyncio.sleep(DELAY - delta)
+                await device.actuators[0].command(1)
+                await asyncio.sleep(T_VIB)
+                await device.actuators[0].command(0)
+                
+                delta = time.process_time() - t_start
 
-            delta = time.process_time() - t_start
+                await asyncio.sleep(DELAY - delta)
 
     await client.disconnect()
 
